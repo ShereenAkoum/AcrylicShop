@@ -256,21 +256,26 @@ export async function ResourceEditor({
 }
 async function ProductExtras({ id, readOnly }: { id: string; readOnly: boolean }) {
   const { client } = await staff('products.view');
-  const { data: variants } = await client.from('product_variants').select('*').eq('product_id', id);
-  const { data: images } = await client.from('product_images').select('*').eq('product_id', id);
-  const { data: inventory } = await client.from('inventory_items').select('id,sku,title,quantity').order('title');
+  const [variantsResult, imagesResult, inventoryResult] = await Promise.all([
+    client.from('product_variants').select('*').eq('product_id', id),
+    client.from('product_images').select('*').eq('product_id', id),
+    client.from('inventory_items').select('id,sku,title,quantity').order('title'),
+  ]);
+  const variants = variantsResult.data || [];
+  const images = imagesResult.data || [];
+  const inventory = inventoryResult.data || [];
   return (
     <fieldset disabled={readOnly} className="section stack" style={{ border: 0, paddingInline: 0 }}>
       <h2>Product images</h2>
-      <ProductImageTable rows={images || []} productId={id} editable={!readOnly} />
+      <ProductImageTable rows={images} productId={id} editable={!readOnly} />
       <h2>Variants</h2>
       <p className="muted">
         Each combination has its own SKU and uses stock from the selected physical inventory item.
       </p>
       <VariantTable
-        rows={variants || []}
+        rows={variants}
         editable={!readOnly}
-        editors={[...(variants || []), null].map((v, index) => (
+        editors={[...(variants), null].map((v, index) => (
           <div className="card" key={v?.id || 'new'}>
             <ActionForm action={saveVariant}>
               <input type="hidden" name="id" value={v?.id || ''} />
