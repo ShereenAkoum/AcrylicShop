@@ -38,7 +38,7 @@ export async function catalog(
     : 'category_id.is.null';
   let query = client
     .from('products')
-    .select('*,product_images(*),product_variants(*)', { count: 'exact' })
+    .select('*,product_images(*),product_variants(*,inventory_items(quantity))', { count: 'exact' })
     .eq('status', 'Active')
     .or(visibility);
   if (options.q) query = query.ilike('title', `%${options.q.replace(/[%_]/g, '')}%`);
@@ -85,7 +85,7 @@ export async function product(slug: string) {
     await db()
   )
     .from('products')
-    .select('*,product_images(*),product_variants(*)')
+    .select('*,product_images(*),product_variants(*,inventory_items(quantity))')
     .eq('slug', slug)
     .eq('status', 'Active')
     .maybeSingle();
