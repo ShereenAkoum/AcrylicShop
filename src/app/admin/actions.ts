@@ -77,15 +77,36 @@ export async function saveVariant(_: Result, form: FormData): Promise<Result> {
             .transform((v) => Math.round(v * 100)),
         ]),
         image_url: safeUrl,
+        inventory_item_id: z.uuid(),
         active: z.boolean(),
       })
       .parse({ ...Object.fromEntries(form), active: form.get('active') === 'on' });
     check((await client.rpc('save_variant', { p_id: form.get('id') || null, p_data: data })).error);
     revalidatePath('/admin');
-    return { success: 'Variant saved. Use Inventory to adjust its stock.' };
+    return { success: 'Variant saved.' };
   } catch (e) {
     return { error: message(e) };
   }
+}
+export async function saveInventory(_: Result, form: FormData): Promise<Result> {
+  try {
+    const { client } = await staff('inventory.edit');
+    const id = z.uuid().nullable().parse(form.get('id') || null);
+    const data = z.object({ sku: z.string().min(1).max(100), title: z.string().min(1).max(200), quantity: z.coerce.number().int().min(0).max(100000), low_stock_threshold: z.coerce.number().int().min(0).max(100000) }).parse(Object.fromEntries(form));
+    const result = id ? await client.from('inventory_items').update(data).eq('id', id) : await client.from('inventory_items').insert(data);
+    check(result.error);
+    revalidatePath('/admin/inventory');
+    return { success: 'Inventory item saved.' };
+  } catch (e) { return { error: message(e) }; }
+}
+export async function deleteInventory(id: string) {
+  try {
+    const { client } = await staff('inventory.edit');
+    const { error } = await client.from('inventory_items').delete().eq('id', z.uuid().parse(id));
+    if (error) return { error: error.code === '23503' ? 'This inventory item is used by a product variant.' : 'Unable to delete inventory item.' };
+    revalidatePath('/admin/inventory');
+    return { success: true };
+  } catch { return { error: 'Unable to delete inventory item.' }; }
 }
 export async function operation(_: Result, form: FormData): Promise<Result> {
   try {
@@ -103,7 +124,6 @@ export async function operation(_: Result, form: FormData): Promise<Result> {
           p_id: z.uuid(),
           p_delta: z.coerce.number().int().min(-100000).max(100000),
           p_reason: z.string().min(3).max(500),
-          p_variant: z.coerce.boolean(),
         }),
       },
       'create-inventory': {
