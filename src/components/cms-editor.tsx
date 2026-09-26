@@ -12,14 +12,12 @@ export function CmsEditor({
   initial,
   canPublish,
   products,
-  collections,
 }: {
   id: string;
   documentKey: string;
   initial: WebsiteDocument;
   canPublish: boolean;
   products: { id: string; title: string }[];
-  collections: { id: string; title: string }[];
 }) {
   const [doc, setDoc] = useState(initial);
   function update(key: keyof WebsiteDocument, value: unknown) {
@@ -160,7 +158,6 @@ export function CmsEditor({
                           'hero',
                           'products',
                           'categories',
-                          'collection',
                           'banner',
                           'story',
                           'newsletter',
@@ -200,20 +197,6 @@ export function CmsEditor({
                       >
                         {['featured', 'bestseller', 'new_arrival', 'selected'].map((v) => (
                           <option key={v}>{v}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="field">
-                      Collection
-                      <select
-                        value={s.collection_id}
-                        onChange={(e) => section(index, { collection_id: e.target.value })}
-                      >
-                        <option value="">None</option>
-                        {collections.map((c) => (
-                          <option value={c.id} key={c.id}>
-                            {c.title}
-                          </option>
                         ))}
                       </select>
                     </label>
