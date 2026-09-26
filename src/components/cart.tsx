@@ -123,7 +123,7 @@ export function ProductPurchase({ product: p }: { product: Product }) {
         <div className="row">
           <button
             className="button"
-            disabled={!v || v.inventory_items?.quantity || 0 < quantity}
+            disabled={!v || (v.inventory_items?.quantity || 0) < quantity}
             onClick={() => {
               if (!v) return;
               const existing = items.find((i) => i.variant_id === v.id);
