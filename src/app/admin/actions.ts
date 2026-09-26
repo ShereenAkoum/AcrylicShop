@@ -97,6 +97,7 @@ export async function saveInventory(_: Result, form: FormData): Promise<Result> 
       const { data: current, error: readError } = await client.from('inventory_items').select('quantity').eq('id', id).single();
       check(readError);
       check((await client.from('inventory_items').update({ sku: data.sku, title: data.title, low_stock_threshold: data.low_stock_threshold }).eq('id', id)).error);
+      if (!current) throw new Error('Inventory item not found');
       const delta = data.quantity - current.quantity;
       if (delta) check((await client.rpc('adjust_inventory', { p_id: id, p_delta: delta, p_reason: 'Inventory quantity edited' })).error);
     } else {
