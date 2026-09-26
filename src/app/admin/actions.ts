@@ -232,18 +232,6 @@ export async function createDocument(_: Result, form: FormData): Promise<Result>
     return { error: message(e) };
   }
 }
-export async function saveCollection(_: Result, form: FormData): Promise<Result> {
-  try {
-    const { client } = await staff('products.edit');
-    const collection_id = z.uuid().parse(form.get('collection_id'));
-    const product_id = z.uuid().parse(form.get('product_id'));
-    check((await client.from('collection_products').upsert({ collection_id, product_id })).error);
-    revalidatePath('/admin');
-    return { success: 'Product added to collection.' };
-  } catch (e) {
-    return { error: message(e) };
-  }
-}
 export async function createUser(_: Result, form: FormData): Promise<Result> {
   try {
     const session = await owner();
