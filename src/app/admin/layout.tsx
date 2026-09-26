@@ -22,12 +22,12 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Workspace', robots: { index: false, follow: false } };
 const links = [
   ['Dashboard', '', null, LayoutDashboard],
+  ['Categories', 'categories', 'products.view', ClipboardList],
+  ['Products', 'products', 'products.view', Package],
+  ['Inventory', 'inventory', 'inventory.view', Package],
   ['Orders', 'orders', 'orders.view', ShoppingBag],
   ['Production', 'production', 'production.view', Layers],
   ['Design Library', 'designs', 'designs.view', Layers],
-  ['Products', 'products', 'products.view', Package],
-  ['Categories', 'categories', 'products.view', ClipboardList],
-  ['Inventory', 'inventory', 'inventory.view', Package],
   ['Customers', 'customers', 'customers.view', Users],
   ['Messages', 'inbox', 'customers.view', Users],
   ['Delivery', 'deliveries', 'deliveries.view', Truck],
