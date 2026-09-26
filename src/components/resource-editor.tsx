@@ -277,7 +277,7 @@ async function ProductExtras({ id, readOnly }: { id: string; readOnly: boolean }
               <input type="hidden" name="id" value={v?.id || ''} />
               <input type="hidden" name="product_id" value={id} />
               <div className="grid grid-3" style={{ marginTop: 20 }}>
-                {['sku', 'color', 'size', 'stand', 'price_override'].map((key) => (
+                {['sku', 'color', 'price_override'].map((key) => (
                   <Field
                     key={key}
                     name={key}
@@ -288,7 +288,7 @@ async function ProductExtras({ id, readOnly }: { id: string; readOnly: boolean }
                       key === 'price_override' && v?.[key] != null ? v[key] / 100 : (v?.[key] ?? '')
                     }
                     step={key === 'price_override' ? '0.01' : undefined}
-                    required={['sku', 'color', 'size', 'stand'].includes(key)}
+                    required={['sku', 'color'].includes(key)}
                     type={key === 'price_override' ? 'number' : 'text'}
                   />
                 ))}
@@ -298,6 +298,14 @@ async function ProductExtras({ id, readOnly }: { id: string; readOnly: boolean }
                     {inventory?.map((item) => <option key={item.id} value={item.id}>{item.title} — {item.quantity} available</option>)}
                   </select>
                 </Field>
+                <Field
+                  name="stock"
+                  label="Stock"
+                  type="number"
+                  min={0}
+                  value={inventory?.find((item) => item.id === v?.inventory_item_id)?.quantity ?? 0}
+                  required
+                />
               </div>
               <VariantImage key={v?.image_url || 'empty'} initialUrl={v?.image_url || ''} />
               <label className="row">
