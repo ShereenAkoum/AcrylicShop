@@ -76,7 +76,8 @@ export type Variant = {
   size: string;
   stand: string;
   price_override: number | null;
-  stock: number;
+  inventory_item_id: string | null;
+  inventory_items: { quantity: number } | null;
   image_url: string | null;
   active: boolean;
 };
