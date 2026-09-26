@@ -17,7 +17,8 @@ export async function deleteProduct(id: string) {
           ? 'This product has order or inventory history. Archive it instead to preserve those records.'
           : 'Unable to delete this product.',
     };
-  revalidatePath('/', 'layout');
+  revalidatePath('/admin/products');
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -30,7 +31,8 @@ export async function setProductActive(id: string, active: boolean) {
     .select('id')
     .single();
   if (error) return { error: 'Unable to change product visibility.' };
-  revalidatePath('/', 'layout');
+  revalidatePath('/admin/products');
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -49,6 +51,7 @@ export async function deleteVariant(id: string) {
           ? 'This variant has order or inventory history. Turn it inactive instead.'
           : 'Unable to delete variant.',
     };
-  revalidatePath('/', 'layout');
+  revalidatePath('/admin/products');
+  revalidatePath('/');
   return { success: true };
 }
