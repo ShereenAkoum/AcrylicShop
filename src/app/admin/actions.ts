@@ -82,7 +82,8 @@ export async function saveVariant(_: Result, form: FormData): Promise<Result> {
       .parse({ ...Object.fromEntries(form), active: form.get('active') === 'on' });
     const { stock, ...variantData } = data;
     check((await client.rpc('save_variant', { p_id: form.get('id') || null, p_data: { ...variantData, stock_allocation: stock } })).error);
-    revalidatePath('/admin');
+    revalidatePath('/admin/products');
+    revalidatePath('/admin/inventory');
     return { success: 'Variant saved.' };
   } catch (e) {
     return { error: message(e) };
@@ -183,7 +184,14 @@ export async function operation(_: Result, form: FormData): Promise<Result> {
     const values = { ...Object.fromEntries(form) };
     const params = config.schema.parse(values);
     check((await client.rpc(config.rpc, params)).error);
-    revalidatePath('/admin', 'layout');
+    const path =
+      action === 'inventory' ? '/admin/inventory' :
+      action === 'production' ? '/admin/production' :
+      action === 'notes' ? '/admin/orders' :
+      action === 'payment' ? '/admin/payments' :
+      action === 'delivery' ? '/admin/deliveries' :
+      '/admin';
+    revalidatePath(path);
     return { success: 'Updated successfully.' };
   } catch (e) {
     return { error: message(e) };
