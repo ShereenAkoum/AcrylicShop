@@ -291,6 +291,34 @@ export async function Inventory() {
   const { client, permissions } = await staff('inventory.view');
   const { data: items, error } = await client.from('inventory_items').select('*').order('title').limit(200);
   if (error) throw new Error(error.message);
+  const { data: variants } = await client
+    .from('product_variants')
+    .select('id,sku,color,stock_allocation,active,inventory_item_id,products(title)')
+    .order('sku')
+    .limit(500);
+  const allocationByItem = new Map<string, number>();
+  for (const variant of variants || []) allocationByItem.set(variant.inventory_item_id, (allocationByItem.get(variant.inventory_item_id) || 0) + variant.stock_allocation);
+  const inventoryFlow = (items || []).map((item) => {
+    const allocated = allocationByItem.get(item.id) || 0;
+    return {
+      inventory_item: `${item.title} (${item.sku})`,
+      physical: item.quantity,
+      allocated,
+      unallocated: Math.max(0, item.quantity - allocated),
+      status: item.quantity <= item.low_stock_threshold ? 'Low stock' : allocated >= item.quantity ? 'Fully allocated' : 'Available',
+    };
+  });
+  const allocations = (variants || []).map((variant) => {
+    const product = variant.products as unknown as { title: string } | null;
+    const item = (items || []).find((row) => row.id === variant.inventory_item_id);
+    return {
+      product: product?.title || 'Product',
+      variant: `${variant.sku} — ${variant.color}`,
+      inventory_item: item?.title || 'Not assigned',
+      allocated: variant.stock_allocation,
+      storefront: variant.active && variant.stock_allocation > 0 && (item?.quantity || 0) > 0 ? 'Visible' : 'Out of stock',
+    };
+  });
   const { data: history } = await client
     .from('inventory_movements')
     .select('id,created_at,delta,movement_type,reason,order_number,product_title,variant_sku,inventory_items(sku,title),profiles(full_name)')
@@ -337,6 +365,16 @@ export async function Inventory() {
       </div>}
     </Title>
     <InventoryTable rows={items || []} editable={editable} editors={(items || []).map(editor)} />
+    <section className="section">
+      <h2>Inventory flow</h2>
+      <p className="muted small">Physical is what you own. Allocated is assigned across product variants. Unallocated is still available to assign.</p>
+      <DataTable rows={inventoryFlow} columns={['inventory_item','physical','allocated','unallocated','status']} />
+    </section>
+    <section className="section">
+      <h2>Product allocations</h2>
+      <p className="muted small">See exactly how each physical inventory pool is distributed across products.</p>
+      <DataTable rows={allocations} columns={['product','variant','inventory_item','allocated','storefront']} />
+    </section>
     <section className="section"><h2>Recent movements</h2><p className="muted small">Every receipt, manual adjustment, and completed sale is recorded here.</p><DataTable rows={movements} columns={['created_at','inventory_item','movement','type','source','by']} /></section>
   </>;
 }
