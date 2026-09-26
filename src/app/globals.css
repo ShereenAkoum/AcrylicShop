@@ -766,16 +766,21 @@ tr:last-child td {
 
 .sidebar-toggle {
   position: fixed;
-  top: 24px;
-  left: 213px;
+  top: 30px;
+  left: 219px;
   z-index: 30;
   margin: 0;
   display: flex;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface);
+  min-width: 32px;
+  min-height: 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
   color: var(--primary);
-  box-shadow: 0 2px 6px #0001;
+  box-shadow: none;
 }
 .add-popup-trigger {
   display: flex;
@@ -784,12 +789,12 @@ tr:last-child td {
 }
 @media (min-width: 761px) and (max-width: 1000px) {
   .sidebar-toggle {
-    left: 173px;
+    left: 179px;
   }
 }
 @media (min-width: 761px) {
   .sidebar-toggle[aria-expanded='false'] {
-    left: 62px;
+    left: 68px;
   }
   .admin:has(.sidebar-toggle[aria-expanded='false']) {
     grid-template-columns: 84px minmax(0, 1fr);
