@@ -766,21 +766,31 @@ tr:last-child td {
 
 .sidebar-toggle {
   position: fixed;
-  top: 30px;
-  left: 219px;
+  top: 34px;
+  left: 227px;
   z-index: 30;
   margin: 0;
   display: flex;
-  min-width: 32px;
-  min-height: 32px;
-  width: 32px;
-  height: 32px;
+  min-width: 24px;
+  min-height: 36px;
+  width: 24px;
+  height: 36px;
   padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
+  border: 1px solid var(--border);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--surface);
+  color: var(--muted);
+  box-shadow: 2px 2px 5px #0000000a;
+  transition: color 150ms ease, background 150ms ease, left 180ms ease;
+}
+.sidebar-toggle:hover {
+  background: var(--surface-2);
   color: var(--primary);
-  box-shadow: none;
+}
+.sidebar-toggle svg {
+  width: 16px;
+  height: 16px;
 }
 .add-popup-trigger {
   display: flex;
@@ -789,12 +799,12 @@ tr:last-child td {
 }
 @media (min-width: 761px) and (max-width: 1000px) {
   .sidebar-toggle {
-    left: 179px;
+    left: 187px;
   }
 }
 @media (min-width: 761px) {
   .sidebar-toggle[aria-expanded='false'] {
-    left: 68px;
+    left: 76px;
   }
   .admin:has(.sidebar-toggle[aria-expanded='false']) {
     grid-template-columns: 84px minmax(0, 1fr);
