@@ -108,14 +108,14 @@ export function ProductPurchase({ product: p }: { product: Product }) {
           </select>
         </label>
         <p className="small muted">
-          SKU: {v?.sku || p.sku} · {v?.stock ? `${v.stock} available` : 'Currently unavailable'}
+          SKU: {v?.sku || p.sku} · {v?.inventory_items?.quantity ? `${v.inventory_items?.quantity || 0} available` : 'Currently unavailable'}
         </p>
         <label className="field">
           Quantity
           <input
             type="number"
             min={1}
-            max={Math.min(v?.stock || 1, 99)}
+            max={Math.min(v?.inventory_items?.quantity || 1, 99)}
             value={quantity}
             onChange={(e) => setQuantity(Math.max(1, Math.min(99, Number(e.target.value))))}
           />
@@ -123,11 +123,11 @@ export function ProductPurchase({ product: p }: { product: Product }) {
         <div className="row">
           <button
             className="button"
-            disabled={!v || v.stock < quantity}
+            disabled={!v || v.inventory_items?.quantity || 0 < quantity}
             onClick={() => {
               if (!v) return;
               const existing = items.find((i) => i.variant_id === v.id);
-              if ((existing?.quantity || 0) + quantity > Math.min(v.stock, 99)) {
+              if ((existing?.quantity || 0) + quantity > Math.min(v.inventory_items?.quantity || 0, 99)) {
                 setNotice('You have reached the available quantity.');
                 return;
               }
