@@ -321,7 +321,7 @@ export async function Inventory() {
   });
   const { data: history } = await client
     .from('inventory_movements')
-    .select('id,created_at,delta,movement_type,reason,order_number,product_title,variant_sku,inventory_items(sku,title),profiles(full_name)')
+    .select('id,created_at,delta,allocation_delta,movement_type,reason,order_number,product_title,variant_sku,inventory_items(sku,title),profiles(full_name)')
     .order('created_at', { ascending: false })
     .limit(50);
   const movements = (history || []).map((movement) => {
@@ -330,7 +330,7 @@ export async function Inventory() {
     return {
       created_at: new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(movement.created_at)),
       inventory_item: item ? `${item.title} (${item.sku})` : 'Inventory item',
-      movement: movement.delta > 0 ? `+${movement.delta} received` : `${movement.delta} used`,
+      movement: movement.movement_type === 'Allocation' ? `${movement.allocation_delta! > 0 ? '+' : ''}${movement.allocation_delta} allocated` : movement.delta > 0 ? `+${movement.delta} received` : `${movement.delta} used`,
       type: movement.movement_type,
       source: movement.order_number
         ? `${movement.order_number}${movement.product_title ? ` — ${movement.product_title}` : ''}${movement.variant_sku ? ` (${movement.variant_sku})` : ''}`
