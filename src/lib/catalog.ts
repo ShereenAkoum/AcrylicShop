@@ -34,7 +34,6 @@ export async function catalog(
   options: {
     q?: string;
     category?: string;
-    collection?: string;
     page?: number;
     selection?: string;
     ids?: string[];
@@ -65,23 +64,6 @@ export async function catalog(
       .maybeSingle();
     if (!data) return { products: [], count: 0 };
     query = query.eq('category_id', data.id);
-  }
-  if (options.collection) {
-    const { data: collection } = await client
-      .from('collections')
-      .select('id')
-      .eq(/^[a-f0-9-]{36}$/.test(options.collection) ? 'id' : 'slug', options.collection)
-      .maybeSingle();
-    if (!collection) return { products: [], count: 0 };
-    const { data } = await client
-      .from('collection_products')
-      .select('product_id')
-      .eq('collection_id', collection.id)
-      .limit(500);
-    query = query.in(
-      'id',
-      (data || []).map((x) => x.product_id),
-    );
   }
   if (options.selection && ['featured', 'bestseller', 'new_arrival'].includes(options.selection))
     query = query.eq(options.selection, true);
@@ -117,7 +99,7 @@ export async function product(slug: string) {
   }
   return data ? ((await withAvailability(client, [data]))[0] as Product) : null;
 }
-export async function taxonomy(table: 'categories' | 'collections', slug: string) {
+export async function taxonomy(table: 'categories', slug: string) {
   if (!configured()) return null;
   const { data, error } = await (
     await db()
