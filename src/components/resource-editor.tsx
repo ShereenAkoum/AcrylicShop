@@ -303,7 +303,7 @@ async function ProductExtras({ id, readOnly }: { id: string; readOnly: boolean }
                   label="Stock"
                   type="number"
                   min={0}
-                  value={inventory?.find((item) => item.id === v?.inventory_item_id)?.quantity ?? 0}
+                  value={v?.stock_allocation ?? 0}
                   required
                 />
               </div>
