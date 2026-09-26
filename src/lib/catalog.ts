@@ -3,6 +3,13 @@ import { db } from './supabase/server';
 import { configured } from './env';
 import type { Product } from './domain';
 import { documentSchema } from './cms';
+async function withAvailability(client: Awaited<ReturnType<typeof db>>, products: any[]) {
+  const ids = products.flatMap((p) => (p.product_variants || []).map((v: { id: string }) => v.id));
+  if (!ids.length) return products;
+  const { data } = await client.rpc('variant_availability', { p_ids: ids });
+  const stock = new Map((data || []).map((row: { variant_id: string; stock: number }) => [row.variant_id, row.stock]));
+  return products.map((p) => ({ ...p, product_variants: (p.product_variants || []).map((v: { id: string }) => ({ ...v, stock: stock.get(v.id) || 0 })) }));
+}
 export async function document(key: string, preview = false) {
   if (!configured()) return null;
   const client = await db();
@@ -38,7 +45,7 @@ export async function catalog(
     : 'category_id.is.null';
   let query = client
     .from('products')
-    .select('*,product_images(*),product_variants(*,inventory_items(quantity))', { count: 'exact' })
+    .select('*,product_images(*),product_variants(*)', { count: 'exact' })
     .eq('status', 'Active')
     .or(visibility);
   if (options.q) query = query.ilike('title', `%${options.q.replace(/[%_]/g, '')}%`);
@@ -77,15 +84,14 @@ export async function catalog(
     .order('created_at', { ascending: false })
     .range(start, start + 11);
   if (error) throw new Error('The collection could not be loaded. Please try again.');
-  return { products: (data || []) as Product[], count: count || 0 };
+  return { products: (await withAvailability(client, data || [])) as Product[], count: count || 0 };
 }
 export async function product(slug: string) {
   if (!configured()) return null;
-  const { data, error } = await (
-    await db()
-  )
+  const client = await db();
+  const { data, error } = await client
     .from('products')
-    .select('*,product_images(*),product_variants(*,inventory_items(quantity))')
+    .select('*,product_images(*),product_variants(*)')
     .eq('slug', slug)
     .eq('status', 'Active')
     .maybeSingle();
@@ -102,7 +108,7 @@ export async function product(slug: string) {
     if (error) throw new Error('Category could not be loaded');
     if (!category) return null;
   }
-  return data as Product | null;
+  return data ? ((await withAvailability(client, [data]))[0] as Product) : null;
 }
 export async function taxonomy(table: 'categories' | 'collections', slug: string) {
   if (!configured()) return null;
