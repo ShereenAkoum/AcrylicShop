@@ -11,8 +11,11 @@ insert into public.designs(id,title,arabic_phrase,type,source_notes) values
  ('60000000-0000-4000-8000-000000000007','Sufficient for us','حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ','Quran','Copied from owner brief; administrator review required.');
 insert into public.products(id,sku,slug,title,arabic_title,description,price,category_id,design_id,status,featured,bestseller,new_arrival) values
  ('70000000-0000-4000-8000-000000000001','YQ-RECT-001','yaqeen-desk-reminder','The Yaqeen Reminder','يقين','A quiet reminder of certainty. Development sample with illustrative artwork; replace images before launch.',1800,(select id from public.categories where slug='desk-reminders'),'60000000-0000-4000-8000-000000000001','Active',true,true,true);
-insert into public.product_variants(product_id,sku,color,size,stand,stock) values
- ('70000000-0000-4000-8000-000000000001','YQ-RECT-001-SAGE','Sage','10 × 7 cm','Natural Wood',10),
- ('70000000-0000-4000-8000-000000000001','YQ-RECT-001-BLUSH','Blush Pink','10 × 7 cm','Ivory Acrylic',8),
- ('70000000-0000-4000-8000-000000000001','YQ-RECT-001-IVORY','Warm Ivory','10 × 7 cm','No Stand',12);
-insert into public.inventory_items(sku,title,quantity,low_stock_threshold) values('BLANK-107','10 × 7 acrylic blanks',50,10),('BLANK-55','5 × 5 round acrylic blanks',30,10),('STAND-IVORY','Ivory stands',30,10),('STAND-WOOD','Wood stands',25,10),('PACK-BOX','Packaging boxes',60,15);
+insert into public.inventory_items(sku,title,quantity,low_stock_threshold) values
+ ('ACRYLIC-L-10X10','L shape acrylic — 10 × 10 cm',20,5),
+ ('ACRYLIC-V-10X7','V shape acrylic — 10 × 7 cm',20,5)
+on conflict(sku) do nothing;
+insert into public.product_variants(product_id,sku,color,size,stand,inventory_item_id) values
+ ('70000000-0000-4000-8000-000000000001','YQ-RECT-001-SAGE','Sage','10 × 7 cm','Natural Wood',(select id from public.inventory_items where sku='ACRYLIC-V-10X7')),
+ ('70000000-0000-4000-8000-000000000001','YQ-RECT-001-BLUSH','Blush Pink','10 × 7 cm','Ivory Acrylic',(select id from public.inventory_items where sku='ACRYLIC-V-10X7')),
+ ('70000000-0000-4000-8000-000000000001','YQ-RECT-001-IVORY','Warm Ivory','10 × 7 cm','No Stand',(select id from public.inventory_items where sku='ACRYLIC-V-10X7'));
