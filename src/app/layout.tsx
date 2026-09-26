@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { themeScript } from '@/components/theme';
 import { siteUrl } from '@/lib/env';
 import { document } from '@/lib/catalog';
 import './globals.css';
@@ -12,12 +11,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = await document('theme');
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="light">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        {theme && (
-          <style>{`:root{--primary:${theme.light_primary}}:root[data-theme=dark]{--primary:${theme.dark_primary}}`}</style>
-        )}
+        {theme && <style>{`:root{--primary:${theme.light_primary}}`}</style>}
       </head>
       <body>
         <a href="#main" className="skip">
