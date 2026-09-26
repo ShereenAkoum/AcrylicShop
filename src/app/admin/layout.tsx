@@ -27,7 +27,6 @@ const links = [
   ['Design Library', 'designs', 'designs.view', Layers],
   ['Products', 'products', 'products.view', Package],
   ['Categories', 'categories', 'products.view', ClipboardList],
-  ['Collections', 'collections', 'products.view', Layers],
   ['Inventory', 'inventory', 'inventory.view', Package],
   ['Customers', 'customers', 'customers.view', Users],
   ['Messages', 'inbox', 'customers.view', Users],
