@@ -13,10 +13,7 @@ export default async function Edit({ params }: { params: Promise<{ key: string }
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) notFound();
-  const [products, collections] = await Promise.all([
-    client.from('products').select('id,title').limit(500),
-    client.from('collections').select('id,title').limit(500),
-  ]);
+  const products = await client.from('products').select('id,title').limit(500);
   return (
     <>
       <Title title={data.title} eyebrow="Website editor" />
@@ -26,7 +23,6 @@ export default async function Edit({ params }: { params: Promise<{ key: string }
         initial={documentSchema.parse(data.draft)}
         canPublish={permissions.includes('website.publish')}
         products={products.data || []}
-        collections={collections.data || []}
       />
     </>
   );
