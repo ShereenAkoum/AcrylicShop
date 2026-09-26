@@ -307,7 +307,7 @@ export async function Inventory() {
   return <>
     <Title title="Inventory" eyebrow="Physical acrylic stock">
       {editable && <div className="row">
-        <AddPopup title="Adjust stock" label="Adjust stock">
+        <AddPopup title="Adjust stock">
           <ActionForm action={operation} confirm="Record this inventory adjustment? Negative quantities reduce available stock.">
             <input name="operation" type="hidden" value="inventory" />
             <Field name="p_id" label="Inventory item"><select name="p_id">{items?.map(i => <option key={i.id} value={i.id}>{i.sku} — {i.title}</option>)}</select></Field>
