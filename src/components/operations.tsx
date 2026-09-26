@@ -293,7 +293,7 @@ export async function Inventory() {
   if (error) throw new Error(error.message);
   const { data: history } = await client.from('inventory_movements').select('*').order('created_at', { ascending: false }).limit(50);
   const editable = permissions.includes('inventory.edit');
-  const editor = (item: (typeof items)[number] | null) => (
+  const editor = (item: { id: string; sku: string; title: string; quantity: number; low_stock_threshold: number } | null) => (
     <div className="card">
       <ActionForm action={saveInventory}>
         <input type="hidden" name="id" value={item?.id || ''} />
