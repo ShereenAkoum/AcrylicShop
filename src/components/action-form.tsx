@@ -14,11 +14,21 @@ export function ActionForm({ action, hideSubmit = false, children, label = 'Save
   const [confirmOpen, setConfirmOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const confirmed = useRef(false);
+  const savedValues = useRef<Map<string, string | boolean>>(new Map());
   const closePopup = usePopupClose();
 
   useEffect(() => {
+    if (state.error && formRef.current) {
+      for (const element of Array.from(formRef.current.elements)) {
+        if (!(element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) || !element.name) continue;
+        const value = savedValues.current.get(element.name);
+        if (value === undefined) continue;
+        if (element instanceof HTMLInputElement && (element.type === 'checkbox' || element.type === 'radio')) element.checked = Boolean(value);
+        else element.value = String(value);
+      }
+    }
     if (state.success) closePopup?.();
-  }, [state.success, closePopup]);
+  }, [state.error, state.success, closePopup]);
 
   return (
     <>
@@ -29,6 +39,13 @@ export function ActionForm({ action, hideSubmit = false, children, label = 'Save
           return;
         }
         confirmed.current = false;
+        savedValues.current.clear();
+        if (formRef.current) {
+          for (const element of Array.from(formRef.current.elements)) {
+            if (!(element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) || !element.name) continue;
+            savedValues.current.set(element.name, element instanceof HTMLInputElement && (element.type === 'checkbox' || element.type === 'radio') ? element.checked : element.value);
+          }
+        }
       }}>
         {children}
         {state.error && <div role="alert" className="notice error">{state.error}</div>}
