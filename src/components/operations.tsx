@@ -289,16 +289,20 @@ export async function Production({ view = 'board' }: { view?: string }) {
 }
 export async function Inventory() {
   const { client, permissions } = await staff('inventory.view');
-  const { data: items, error } = await client.from('inventory_items').select('*').order('title').limit(200);
-  if (error) throw new Error(error.message);
-  const { data: variants } = await client
-    .from('product_variants')
-    .select('id,sku,color,stock_allocation,active,inventory_item_id,products(title)')
-    .order('sku')
-    .limit(500);
+  const [itemsResult, variantsResult, historyResult] = await Promise.all([
+    client.from('inventory_items').select('id,sku,title,quantity,low_stock_threshold').order('title').limit(200),
+    client.from('product_variants').select('id,sku,color,stock_allocation,active,inventory_item_id,products(title)').order('sku').limit(500),
+    client.from('inventory_movements').select('id,created_at,delta,allocation_delta,movement_type,reason,order_number,product_title,variant_sku,inventory_items(sku,title),profiles(full_name)').order('created_at', { ascending: false }).limit(50),
+  ]);
+  if (itemsResult.error) throw new Error(itemsResult.error.message);
+  if (variantsResult.error) throw new Error(variantsResult.error.message);
+  if (historyResult.error) throw new Error(historyResult.error.message);
+  const items = itemsResult.data || [];
+  const variants = variantsResult.data || [];
+  const history = historyResult.data || [];
   const allocationByItem = new Map<string, number>();
-  for (const variant of variants || []) allocationByItem.set(variant.inventory_item_id, (allocationByItem.get(variant.inventory_item_id) || 0) + variant.stock_allocation);
-  const inventoryFlow = (items || []).map((item) => {
+  for (const variant of variants) allocationByItem.set(variant.inventory_item_id, (allocationByItem.get(variant.inventory_item_id) || 0) + variant.stock_allocation);
+  const inventoryFlow = (items).map((item) => {
     const allocated = allocationByItem.get(item.id) || 0;
     return {
       inventory_item: `${item.title} (${item.sku})`,
@@ -308,9 +312,9 @@ export async function Inventory() {
       status: item.quantity <= item.low_stock_threshold ? 'Low stock' : allocated >= item.quantity ? 'Fully allocated' : 'Available',
     };
   });
-  const allocations = (variants || []).map((variant) => {
+  const allocations = (variants).map((variant) => {
     const product = variant.products as unknown as { title: string } | null;
-    const item = (items || []).find((row) => row.id === variant.inventory_item_id);
+    const item = (items).find((row) => row.id === variant.inventory_item_id);
     return {
       product: product?.title || 'Product',
       variant: `${variant.sku} — ${variant.color}`,
@@ -319,12 +323,7 @@ export async function Inventory() {
       storefront: variant.active && variant.stock_allocation > 0 && (item?.quantity || 0) > 0 ? 'Visible' : 'Out of stock',
     };
   });
-  const { data: history } = await client
-    .from('inventory_movements')
-    .select('id,created_at,delta,allocation_delta,movement_type,reason,order_number,product_title,variant_sku,inventory_items(sku,title),profiles(full_name)')
-    .order('created_at', { ascending: false })
-    .limit(50);
-  const movements = (history || []).map((movement) => {
+  const movements = (history).map((movement) => {
     const item = movement.inventory_items as unknown as { sku: string; title: string } | null;
     const profile = movement.profiles as unknown as { full_name: string } | null;
     return {
@@ -364,7 +363,7 @@ export async function Inventory() {
         <AddPopup title="Add inventory item">{editor(null)}</AddPopup>
       </div>}
     </Title>
-    <InventoryTable rows={items || []} editable={editable} editors={(items || []).map(editor)} />
+    <InventoryTable rows={items} editable={editable} editors={(items).map(editor)} />
     <section className="section">
       <h2>Inventory flow</h2>
       <p className="muted small">Physical is what you own. Allocated is assigned across product variants. Unallocated is still available to assign.</p>
