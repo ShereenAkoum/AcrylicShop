@@ -302,7 +302,6 @@ async function ProductExtras({ id, readOnly }: { id: string; readOnly: boolean }
                   name="stock"
                   label="Stock"
                   type="number"
-                  min={0}
                   value={v?.stock_allocation ?? 0}
                   required
                 />
