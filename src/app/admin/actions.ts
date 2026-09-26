@@ -93,8 +93,15 @@ export async function saveInventory(_: Result, form: FormData): Promise<Result> 
     const { client } = await staff('inventory.edit');
     const id = z.uuid().nullable().parse(form.get('id') || null);
     const data = z.object({ sku: z.string().min(1).max(100), title: z.string().min(1).max(200), quantity: z.coerce.number().int().min(0).max(100000), low_stock_threshold: z.coerce.number().int().min(0).max(100000) }).parse(Object.fromEntries(form));
-    const result = id ? await client.from('inventory_items').update(data).eq('id', id) : await client.from('inventory_items').insert(data);
-    check(result.error);
+    if (id) {
+      const { data: current, error: readError } = await client.from('inventory_items').select('quantity').eq('id', id).single();
+      check(readError);
+      check((await client.from('inventory_items').update({ sku: data.sku, title: data.title, low_stock_threshold: data.low_stock_threshold }).eq('id', id)).error);
+      const delta = data.quantity - current.quantity;
+      if (delta) check((await client.rpc('adjust_inventory', { p_id: id, p_delta: delta, p_reason: 'Inventory quantity edited' })).error);
+    } else {
+      check((await client.from('inventory_items').insert(data)).error);
+    }
     revalidatePath('/admin/inventory');
     return { success: 'Inventory item saved.' };
   } catch (e) { return { error: message(e) }; }
