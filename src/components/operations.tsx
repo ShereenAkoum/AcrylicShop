@@ -7,7 +7,8 @@ import { staff } from '@/lib/auth';
 import { money, stages } from '@/lib/domain';
 import { ActionForm } from './action-form';
 import { Field, Title, Empty } from './ui';
-import { operation } from '@/app/admin/actions';
+import { operation, saveInventory } from '@/app/admin/actions';
+import { InventoryTable } from './inventory-table';
 type Row = Record<string, unknown>;
 export function DataTable({
   rows,
@@ -288,83 +289,37 @@ export async function Production({ view = 'board' }: { view?: string }) {
 }
 export async function Inventory() {
   const { client, permissions } = await staff('inventory.view');
-  const { data: items, error } = await client
-    .from('inventory_items')
-    .select('*')
-    .order('title')
-    .limit(200);
+  const { data: items, error } = await client.from('inventory_items').select('*').order('title').limit(200);
   if (error) throw new Error(error.message);
-  const { data: variants } = await client
-    .from('product_variants')
-    .select('id,sku,stock')
-    .order('sku')
-    .limit(200);
-  const { data: history } = await client
-    .from('inventory_movements')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(50);
-  return (
-    <>
-      <Title title="Inventory" eyebrow="Ready for what’s next" />
-      <div className="grid grid-2">
-        <div className="stack">
-          <h2>Production supplies</h2>
-          <DataTable
-            rows={items || []}
-            columns={['sku', 'title', 'quantity', 'low_stock_threshold']}
-          />
-          <h2>Variant stock</h2>
-          <DataTable rows={variants || []} columns={['sku', 'stock']} />
-        </div>
-        {permissions.includes('inventory.edit') && (
-          <div className="stack">
-            <div className="card">
-              <h2>Adjust stock</h2>
-              <ActionForm
-                action={operation}
-                confirm="Record this inventory adjustment? Negative quantities reduce available stock."
-              >
-                <input name="operation" type="hidden" value="inventory" />
-                <Field name="p_id" label="Inventory item / variant">
-                  <select name="p_id">
-                    {items?.map((i) => (
-                      <option key={i.id} value={i.id}>
-                        {i.sku} — {i.title}
-                      </option>
-                    ))}
-                    {variants?.map((i) => (
-                      <option key={i.id} value={i.id}>
-                        {i.sku} (variant)
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <label className="row">
-                  <input name="p_variant" type="checkbox" value="true" />
-                  The selected record is a product variant
-                </label>
-                <Field name="p_delta" label="Change (+ received / − used)" type="number" required />
-                <Field name="p_reason" label="Reason" required />
-              </ActionForm>
-            </div>
-            <AddPopup title="Add supply">
-              <ActionForm action={operation}>
-                <input name="operation" type="hidden" value="create-inventory" />
-                <Field name="p_sku" label="SKU" required />
-                <Field name="p_title" label="Supply name" required />
-                <Field name="p_threshold" label="Low-stock threshold" type="number" value={5} />
-              </ActionForm>
-            </AddPopup>
-          </div>
-        )}
-      </div>
-      <section className="section">
-        <h2>Recent movements</h2>
-        <DataTable rows={history || []} columns={['created_at', 'delta', 'reason', 'actor']} />
-      </section>
-    </>
+  const { data: history } = await client.from('inventory_movements').select('*').order('created_at', { ascending: false }).limit(50);
+  const editable = permissions.includes('inventory.edit');
+  const editor = (item: (typeof items)[number] | null) => (
+    <div className="card">
+      <ActionForm action={saveInventory}>
+        <input type="hidden" name="id" value={item?.id || ''} />
+        <Field name="sku" label="SKU" value={item?.sku || ''} required />
+        <Field name="title" label="Inventory item" value={item?.title || ''} required />
+        <Field name="quantity" label="Quantity" type="number" value={item?.quantity ?? 0} required />
+        <Field name="low_stock_threshold" label="Low-stock threshold" type="number" value={item?.low_stock_threshold ?? 5} required />
+      </ActionForm>
+    </div>
   );
+  return <>
+    <Title title="Inventory" eyebrow="Physical acrylic stock">
+      {editable && <AddPopup title="Add inventory item">{editor(null)}</AddPopup>}
+    </Title>
+    <InventoryTable rows={items || []} editable={editable} editors={(items || []).map(editor)} />
+    {editable && <section className="section card">
+      <h2>Adjust stock</h2>
+      <ActionForm action={operation} confirm="Record this inventory adjustment? Negative quantities reduce available stock.">
+        <input name="operation" type="hidden" value="inventory" />
+        <Field name="p_id" label="Inventory item"><select name="p_id">{items?.map(i => <option key={i.id} value={i.id}>{i.sku} — {i.title}</option>)}</select></Field>
+        <Field name="p_delta" label="Change (+ received / − used)" type="number" required />
+        <Field name="p_reason" label="Reason" required />
+      </ActionForm>
+    </section>}
+    <section className="section"><h2>Recent movements</h2><DataTable rows={history || []} columns={['created_at','delta','reason','actor']} /></section>
+  </>;
 }
 export async function Fulfillment({ kind }: { kind: 'payments' | 'deliveries' }) {
   const { client, permissions } = await staff(`${kind}.view`);
