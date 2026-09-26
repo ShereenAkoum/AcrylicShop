@@ -8,17 +8,15 @@ export async function CatalogPage({
   showCategories = false,
   q,
   category,
-  collection,
   page = 1,
 }: {
   title: string;
   showCategories?: boolean;
   q?: string;
   category?: string;
-  collection?: string;
   page?: number;
 }) {
-  const { products, count } = await catalog({ q, category, collection, page });
+  const { products, count } = await catalog({ q, category, page });
   const categories = showCategories
     ? (
         await (
