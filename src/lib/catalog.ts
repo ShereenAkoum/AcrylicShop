@@ -8,7 +8,14 @@ async function withAvailability(client: Awaited<ReturnType<typeof db>>, products
   if (!ids.length) return products;
   const { data } = await client.rpc('variant_availability', { p_ids: ids });
   const stock = new Map((data || []).map((row: { variant_id: string; stock: number }) => [row.variant_id, row.stock]));
-  return products.map((p) => ({ ...p, product_variants: (p.product_variants || []).map((v: { id: string }) => ({ ...v, stock: stock.get(v.id) || 0 })) }));
+  return products
+    .map((p) => ({
+      ...p,
+      product_variants: (p.product_variants || [])
+        .map((v: { id: string }) => ({ ...v, stock: stock.get(v.id) || 0 }))
+        .filter((v: { active?: boolean; stock: number }) => v.active !== false && v.stock > 0),
+    }))
+    .filter((p) => p.product_variants.length > 0);
 }
 export async function document(key: string, preview = false) {
   if (!configured()) return null;
