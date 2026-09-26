@@ -3,6 +3,7 @@ import { useState, useTransition } from 'react';
 import Image from 'next/image';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Modal } from './modal';
+import { PopupCloseContext } from './popup-context';
 import { Upload } from './upload';
 import { VariantImage } from './variant-image';
 import { ActionForm } from './action-form';
@@ -130,6 +131,7 @@ export function ProductImageTable({
             />
           )}
           {action === 'edit' && selected && (
+            <PopupCloseContext.Provider value={close}>
             <ActionForm action={productImage}>
               <input type="hidden" name="id" value={selected.id} />
               <input type="hidden" name="product_id" value={productId} />
@@ -149,6 +151,7 @@ export function ProductImageTable({
                 />
               </label>
             </ActionForm>
+            </PopupCloseContext.Provider>
           )}
           {action === 'delete' && selected && (
             <>
