@@ -28,16 +28,26 @@ export async function catalog(
 ) {
   if (!configured()) return { products: [] as Product[], count: 0 };
   const client = await db();
+  const { data: visibleCategories, error: categoryError } = await client
+    .from('categories')
+    .select('id')
+    .eq('active', true);
+  if (categoryError) throw new Error('Categories could not be loaded.');
+  const visibility = visibleCategories?.length
+    ? `category_id.is.null,category_id.in.(${visibleCategories.map((c) => c.id).join(',')})`
+    : 'category_id.is.null';
   let query = client
     .from('products')
     .select('*,product_images(*),product_variants(*)', { count: 'exact' })
-    .eq('status', 'Active');
+    .eq('status', 'Active')
+    .or(visibility);
   if (options.q) query = query.ilike('title', `%${options.q.replace(/[%_]/g, '')}%`);
   if (options.category) {
     const { data } = await client
       .from('categories')
       .select('id')
       .eq('slug', options.category)
+      .eq('active', true)
       .maybeSingle();
     if (!data) return { products: [], count: 0 };
     query = query.eq('category_id', data.id);
@@ -80,6 +90,18 @@ export async function product(slug: string) {
     .eq('status', 'Active')
     .maybeSingle();
   if (error) throw new Error('Product could not be loaded');
+  if (data?.category_id) {
+    const { data: category, error } = await (
+      await db()
+    )
+      .from('categories')
+      .select('id')
+      .eq('id', data.category_id)
+      .eq('active', true)
+      .maybeSingle();
+    if (error) throw new Error('Category could not be loaded');
+    if (!category) return null;
+  }
   return data as Product | null;
 }
 export async function taxonomy(table: 'categories' | 'collections', slug: string) {

@@ -1,3 +1,4 @@
+import { SidebarLink, SidebarToggle } from '@/components/sidebar-controls';
 import Link from 'next/link';
 import {
   LayoutDashboard,
@@ -11,7 +12,6 @@ import {
   BarChart3,
   Shield,
   Settings,
-  Image as ImageIcon,
   ClipboardList,
 } from 'lucide-react';
 import { staff } from '@/lib/auth';
@@ -34,7 +34,6 @@ const links = [
   ['Delivery', 'deliveries', 'deliveries.view', Truck],
   ['Payments', 'payments', 'payments.view', Wallet],
   ['Website', 'website', 'website.view', Globe],
-  ['Media Library', 'media', 'media.view', ImageIcon],
   ['Reports', 'reports', 'reports.view', BarChart3],
   ['Users & Roles', 'users', 'users.view', Shield],
   ['Audit Log', 'audit', 'audit.view', ClipboardList],
@@ -46,18 +45,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="admin">
       <aside className="sidebar">
         <Brand />
-        <label className="row small sidebar-toggle">
-          <input id="compact-sidebar" type="checkbox" aria-label="Collapse sidebar" />
-          <span>Compact sidebar</span>
-        </label>
+        <SidebarToggle />
         <nav aria-label="Workspace navigation">
           {links
             .filter((l) => !l[2] || session.permissions.includes(l[2]))
             .map(([label, path, , Icon]) => (
-              <Link key={path} href={`/admin/${path}`}>
+              <SidebarLink key={path} href={`/admin/${path}`}>
                 <Icon size={17} />
                 <span>{label}</span>
-              </Link>
+              </SidebarLink>
             ))}
         </nav>
       </aside>

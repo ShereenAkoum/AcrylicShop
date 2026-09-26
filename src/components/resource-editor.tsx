@@ -1,9 +1,9 @@
-import { assetUrl } from '@/lib/assets';
-import {
-  productImage,
-  removeCollectionProduct,
-  customerAddress,
-} from '@/app/admin/catalog-actions';
+import { AddPopup } from './add-popup';
+import { VariantTable } from './variant-table';
+import { ProductImageTable } from './product-image-table';
+import { VariantImage } from './variant-image';
+import { CategoryControls } from './category-controls';
+import { removeCollectionProduct, customerAddress } from '@/app/admin/catalog-actions';
 import Link from 'next/link';
 import { staff } from '@/lib/auth';
 import { resources } from '@/lib/resources';
@@ -49,9 +49,9 @@ export async function ResourceList({
     <>
       <Title title={r.title} eyebrow="Workspace">
         {permissions.includes(`${r.permission}.edit`) && (
-          <Link className="button" href={`/admin/${name}/new`}>
-            + Create {name === 'categories' ? 'category' : name.slice(0, -1)}
-          </Link>
+          <AddPopup title={`Add ${name === 'categories' ? 'category' : name.slice(0, -1)}`}>
+            <ResourceEditor name={name} id="new" embedded />
+          </AddPopup>
         )}
       </Title>
       <form className="row" style={{ marginBottom: 20 }}>
@@ -73,7 +73,9 @@ export async function ResourceList({
                 {r.columns.map((c) => (
                   <th key={c}>{c.replaceAll('_', ' ')}</th>
                 ))}
-                <th>Details</th>
+                <th className="actions-cell">
+                  {['categories', 'products'].includes(name) ? 'Actions' : 'Details'}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -81,15 +83,44 @@ export async function ResourceList({
                 <tr key={row.id}>
                   {r.columns.map((c) => (
                     <td key={c}>
-                      {typeof row[c] === 'boolean'
-                        ? row[c]
-                          ? 'Yes'
-                          : 'No'
-                        : String(row[c] ?? '—')}
+                      {(name === 'categories' && c === 'active') ||
+                      (name === 'products' && c === 'status') ? (
+                        <CategoryControls
+                          resource={name === 'products' ? 'products' : 'categories'}
+                          id={row.id}
+                          title={row.title}
+                          active={name === 'products' ? row.status === 'Active' : row.active}
+                          editable={permissions.includes('products.edit')}
+                          toggle
+                        />
+                      ) : typeof row[c] === 'boolean' ? (
+                        row[c] ? (
+                          'Yes'
+                        ) : (
+                          'No'
+                        )
+                      ) : name === 'products' && c === 'price' ? (
+                        new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'USD',
+                        }).format(row[c] / 100)
+                      ) : (
+                        String(row[c] ?? '—')
+                      )}
                     </td>
                   ))}
-                  <td>
-                    <Link href={`/admin/${name}/${row.id}`}>Open →</Link>
+                  <td className="actions-cell">
+                    {name === 'categories' || name === 'products' ? (
+                      <CategoryControls
+                        resource={name}
+                        id={row.id}
+                        title={row.title}
+                        active={row.active}
+                        editable={permissions.includes('products.edit')}
+                      />
+                    ) : (
+                      <Link href={`/admin/${name}/${row.id}`}>Open</Link>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -111,7 +142,17 @@ export async function ResourceList({
     </>
   );
 }
-export async function ResourceEditor({ name, id }: { name: string; id: string }) {
+export async function ResourceEditor({
+  name,
+  id,
+  readOnly = false,
+  embedded = false,
+}: {
+  name: string;
+  id: string;
+  readOnly?: boolean;
+  embedded?: boolean;
+}) {
   const r = resources[name];
   if (!r) notFound();
   const { client, permissions } = await staff(`${r.permission}.view`);
@@ -121,7 +162,7 @@ export async function ResourceEditor({ name, id }: { name: string; id: string })
     : await client.from(r.table).select('*').eq('id', id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!isNew && !data) notFound();
-  const editable = permissions.includes(`${r.permission}.edit`);
+  const editable = !readOnly && permissions.includes(`${r.permission}.edit`);
   const relations: Record<string, { id: string; title: string }[]> = {};
   for (const field of r.fields.filter((f) => f.type === 'relation' && f.table)) {
     const { data } = await client.from(field.table!).select('id,title').limit(500);
@@ -129,16 +170,19 @@ export async function ResourceEditor({ name, id }: { name: string; id: string })
   }
   return (
     <>
-      <Title
-        title={isNew ? `Create ${r.title.toLowerCase()}` : String(data?.title || data?.full_name)}
-      >
-        <Link className="button secondary" href={`/admin/${name}`}>
-          Back to {r.title}
-        </Link>
-      </Title>
+      {!embedded && (
+        <Title
+          title={isNew ? `Create ${r.title.toLowerCase()}` : String(data?.title || data?.full_name)}
+        >
+          <Link className="button secondary" href={`/admin/${name}`}>
+            Back to {r.title}
+          </Link>
+        </Title>
+      )}
       <div className="card">
         <ActionForm
           action={saveResource}
+          hideSubmit={!editable}
           confirm="Save these changes, including any publication or archive status change?"
         >
           <input type="hidden" name="_resource" value={name} />
@@ -155,9 +199,15 @@ export async function ResourceEditor({ name, id }: { name: string; id: string })
                   />
                 ) : f.type === 'checkbox' ? (
                   <input
+                    className="active-toggle"
+                    role="switch"
                     type="checkbox"
                     name={f.key}
-                    defaultChecked={data?.[f.key] ?? f.key === 'active'}
+                    defaultChecked={
+                      name === 'products' && f.key === 'status'
+                        ? data?.status === 'Active'
+                        : (data?.[f.key] ?? f.key === 'active')
+                    }
                   />
                 ) : f.type === 'select' || f.type === 'relation' ? (
                   <select name={f.key} defaultValue={data?.[f.key] || ''}>
@@ -176,10 +226,13 @@ export async function ResourceEditor({ name, id }: { name: string; id: string })
                     name={f.key}
                     type={f.type === 'number' ? 'number' : 'text'}
                     min={f.type === 'number' ? 0 : undefined}
+                    step={name === 'products' && f.key === 'price' ? '0.01' : undefined}
                     defaultValue={
-                      Array.isArray(data?.[f.key])
-                        ? data?.[f.key].join(', ')
-                        : (data?.[f.key] ?? '')
+                      name === 'products' && f.key === 'price' && data
+                        ? data.price / 100
+                        : Array.isArray(data?.[f.key])
+                          ? data?.[f.key].join(', ')
+                          : (data?.[f.key] ?? '')
                     }
                     required={f.required}
                   />
@@ -189,7 +242,7 @@ export async function ResourceEditor({ name, id }: { name: string; id: string })
           </fieldset>
         </ActionForm>
       </div>
-      {!isNew && name === 'products' && <ProductExtras id={id} />}{' '}
+      {!isNew && name === 'products' && <ProductExtras id={id} readOnly={!editable} />}{' '}
       {!isNew && name === 'designs' && (
         <section className="section stack">
           <h2>Private production files</h2>
@@ -202,92 +255,60 @@ export async function ResourceEditor({ name, id }: { name: string; id: string })
     </>
   );
 }
-async function ProductExtras({ id }: { id: string }) {
+async function ProductExtras({ id, readOnly }: { id: string; readOnly: boolean }) {
   const { client } = await staff('products.view');
   const { data: variants } = await client.from('product_variants').select('*').eq('product_id', id);
   const { data: images } = await client.from('product_images').select('*').eq('product_id', id);
-  const { data: media } = await client.from('media').select('url,title').limit(200);
   return (
-    <section className="section stack">
+    <fieldset disabled={readOnly} className="section stack" style={{ border: 0, paddingInline: 0 }}>
       <h2>Product images</h2>
-      <Upload bucket="product-images" entityId={id} />
-      {images?.map((i) => (
-        <details className="card" key={i.id}>
-          <summary>
-            {i.alt || 'Product image'} · position {i.position}
-          </summary>
-          <a href={assetUrl(i.url)} target="_blank" rel="noreferrer">
-            {i.alt || 'Product image'} ↗
-          </a>
-          <ActionForm action={productImage}>
-            <input type="hidden" name="id" value={i.id} />
-            <input type="hidden" name="product_id" value={id} />
-            <Field label="Replacement image URL" name="url" value={i.url} />
-            <Field label="Alt text" name="alt" value={i.alt} />
-            <Field label="Position" name="position" type="number" value={i.position} />
-          </ActionForm>
-          <ActionForm
-            action={productImage}
-            label="Remove image from product"
-            confirm="Remove this image from the product? The reusable media file is preserved."
-          >
-            <input type="hidden" name="id" value={i.id} />
-            <input type="hidden" name="remove" value="true" />
-          </ActionForm>
-        </details>
-      ))}
-      <details className="card">
-        <summary>Attach an existing media image</summary>
-        <ActionForm action={productImage}>
-          <input type="hidden" name="product_id" value={id} />
-          <Field label="Media image" name="url">
-            <select name="url">
-              {media?.map((m) => (
-                <option key={m.url} value={m.url}>
-                  {m.title}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Alt text" name="alt" required />
-          <Field label="Position" name="position" type="number" value={0} />
-        </ActionForm>
-      </details>
+      <ProductImageTable rows={images || []} productId={id} editable={!readOnly} />
       <h2>Variants</h2>
       <p className="muted">
         Each combination has its own SKU and stock. Add stock through Inventory, where every change
         has a reason and history.
       </p>
-      {[...(variants || []), null].map((v, index) => (
-        <details className="card" key={v?.id || 'new'} open={!v}>
-          <summary>
-            {v
-              ? `${v.sku} · ${v.color} / ${v.size} / ${v.stand} · Stock: ${v.stock}`
-              : '+ Add variant'}
-          </summary>
-          <ActionForm action={saveVariant}>
-            <input type="hidden" name="id" value={v?.id || ''} />
-            <input type="hidden" name="product_id" value={id} />
-            <div className="grid grid-3" style={{ marginTop: 20 }}>
-              {['sku', 'color', 'size', 'stand', 'price_override', 'image_url'].map((key) => (
-                <Field
-                  key={key}
-                  name={key}
-                  label={key.replaceAll('_', ' ')}
-                  value={v?.[key] ?? ''}
-                  required={['sku', 'color', 'size', 'stand'].includes(key)}
-                  type={key === 'price_override' ? 'number' : 'text'}
+      <VariantTable
+        rows={variants || []}
+        editable={!readOnly}
+        editors={[...(variants || []), null].map((v, index) => (
+          <div className="card" key={v?.id || 'new'}>
+            <ActionForm action={saveVariant}>
+              <input type="hidden" name="id" value={v?.id || ''} />
+              <input type="hidden" name="product_id" value={id} />
+              <div className="grid grid-3" style={{ marginTop: 20 }}>
+                {['sku', 'color', 'size', 'stand', 'price_override'].map((key) => (
+                  <Field
+                    key={key}
+                    name={key}
+                    label={
+                      key === 'price_override' ? 'Price override (USD)' : key.replaceAll('_', ' ')
+                    }
+                    value={
+                      key === 'price_override' && v?.[key] != null ? v[key] / 100 : (v?.[key] ?? '')
+                    }
+                    step={key === 'price_override' ? '0.01' : undefined}
+                    required={['sku', 'color', 'size', 'stand'].includes(key)}
+                    type={key === 'price_override' ? 'number' : 'text'}
+                  />
+                ))}
+              </div>
+              <VariantImage key={v?.image_url || 'empty'} initialUrl={v?.image_url || ''} />
+              <label className="row">
+                <input
+                  className="active-toggle"
+                  role="switch"
+                  name="active"
+                  type="checkbox"
+                  defaultChecked={v?.active ?? true}
                 />
-              ))}
-            </div>
-            <label className="row">
-              <input name="active" type="checkbox" defaultChecked={v?.active ?? true} />
-              Active variant {index + 1}
-            </label>
-          </ActionForm>
-        </details>
-      ))}
-    </section>
+                Active variant {index + 1}
+              </label>
+            </ActionForm>
+          </div>
+        ))}
+      />
+    </fieldset>
   );
 }
 async function PrivateFiles({ id }: { id: string }) {
@@ -326,18 +347,20 @@ async function CollectionExtras({ id }: { id: string }) {
           </ActionForm>
         </div>
       ))}
-      <ActionForm action={saveCollection} label="Add to collection">
-        <input type="hidden" name="collection_id" value={id} />
-        <Field name="product_id" label="Product">
-          <select name="product_id">
-            {data?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </ActionForm>
+      <AddPopup title="Add to collection">
+        <ActionForm action={saveCollection} label="Add to collection">
+          <input type="hidden" name="collection_id" value={id} />
+          <Field name="product_id" label="Product">
+            <select name="product_id">
+              {data?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </ActionForm>
+      </AddPopup>
     </section>
   );
 }
@@ -358,14 +381,16 @@ async function CustomerOrders({ id }: { id: string }) {
       <h2>Addresses</h2>
       <div className="grid grid-2">
         {[...(addresses || []), null].map((a) => (
-          <div className="card" key={a?.id || 'new'}>
-            <ActionForm action={customerAddress}>
-              <input type="hidden" name="id" value={a?.id || ''} />
-              <input type="hidden" name="customer_id" value={id} />
-              <Field label="Address" name="address" value={a?.address || ''} required />
-              <Field label="City / area" name="city" value={a?.city || ''} required />
-            </ActionForm>
-          </div>
+          <AddPopup title="Add address" inline={Boolean(a)} key={a?.id || 'new'}>
+            <div className="card">
+              <ActionForm action={customerAddress}>
+                <input type="hidden" name="id" value={a?.id || ''} />
+                <input type="hidden" name="customer_id" value={id} />
+                <Field label="Address" name="address" value={a?.address || ''} required />
+                <Field label="City / area" name="city" value={a?.city || ''} required />
+              </ActionForm>
+            </div>
+          </AddPopup>
         ))}
       </div>
       <h2>Order history</h2>

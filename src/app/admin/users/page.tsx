@@ -1,3 +1,4 @@
+import { AddPopup } from '@/components/add-popup';
 import { owner } from '@/lib/auth';
 import { Title, Field } from '@/components/ui';
 import { ActionForm } from '@/components/action-form';
@@ -14,8 +15,7 @@ export default async function Users() {
     <>
       <Title title="Users & Roles" eyebrow="The people behind the purpose" />
       <div className="grid grid-2">
-        <div className="card">
-          <h2>Create staff account</h2>
+        <AddPopup title="Add staff account">
           <ActionForm
             action={createUser}
             label="Create user"
@@ -42,7 +42,7 @@ export default async function Users() {
               </select>
             </Field>
           </ActionForm>
-        </div>
+        </AddPopup>
         <div className="stack">
           {users.data?.map((user) => (
             <details className="card" key={user.id}>
@@ -91,37 +91,39 @@ export default async function Users() {
       <section className="section stack">
         <h2>Roles & permissions</h2>
         {[...(roles.data || []), null].map((role) => (
-          <details className="card" key={role?.id || 'new'}>
-            <summary>
-              {role?.name || '+ Create role'} {role?.is_owner && '· Protected'}
-            </summary>
-            {role?.is_owner ? (
-              <p>Owners have full access. This role cannot be edited.</p>
-            ) : (
-              <ActionForm
-                action={saveRole}
-                confirm="Save these permissions? Changes apply immediately to every member of this role."
-              >
-                <input type="hidden" name="id" value={role?.id || ''} />
-                <Field name="name" label="Role name" value={role?.name || ''} required />
-                <div className="grid grid-3">
-                  {permissions.data?.map((p) => (
-                    <label key={p.key} className="small">
-                      <input
-                        type="checkbox"
-                        name="permissions"
-                        value={p.key}
-                        defaultChecked={role?.role_permissions.some(
-                          (rp: { permission_key: string }) => rp.permission_key === p.key,
-                        )}
-                      />{' '}
-                      {p.description}
-                    </label>
-                  ))}
-                </div>
-              </ActionForm>
-            )}
-          </details>
+          <AddPopup title="Add role" inline={Boolean(role)} key={role?.id || 'new'}>
+            <details className="card" open={!role}>
+              <summary>
+                {role?.name || '+ Create role'} {role?.is_owner && '· Protected'}
+              </summary>
+              {role?.is_owner ? (
+                <p>Owners have full access. This role cannot be edited.</p>
+              ) : (
+                <ActionForm
+                  action={saveRole}
+                  confirm="Save these permissions? Changes apply immediately to every member of this role."
+                >
+                  <input type="hidden" name="id" value={role?.id || ''} />
+                  <Field name="name" label="Role name" value={role?.name || ''} required />
+                  <div className="grid grid-3">
+                    {permissions.data?.map((p) => (
+                      <label key={p.key} className="small">
+                        <input
+                          type="checkbox"
+                          name="permissions"
+                          value={p.key}
+                          defaultChecked={role?.role_permissions.some(
+                            (rp: { permission_key: string }) => rp.permission_key === p.key,
+                          )}
+                        />{' '}
+                        {p.description}
+                      </label>
+                    ))}
+                  </div>
+                </ActionForm>
+              )}
+            </details>
+          </AddPopup>
         ))}
       </section>
     </>

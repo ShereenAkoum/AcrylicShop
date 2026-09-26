@@ -9,9 +9,6 @@ export default async function StoreLayout({ children }: { children: React.ReactN
   const links = nav?.links || [
     { label: 'Home', url: '/' },
     { label: 'Shop', url: '/shop' },
-    { label: 'Quran & Duas', url: '/categories/quran-duas' },
-    { label: 'Desk Reminders', url: '/categories/desk-reminders' },
-    { label: 'Gifts', url: '/collections/gifts' },
     { label: 'About', url: '/about' },
   ];
   return (

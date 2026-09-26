@@ -1,24 +1,57 @@
+import { db } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { catalog } from '@/lib/catalog';
 import { ProductCard } from './product-card';
 import { Empty, Title } from './ui';
 export async function CatalogPage({
   title,
+  showCategories = false,
   q,
   category,
   collection,
   page = 1,
 }: {
   title: string;
+  showCategories?: boolean;
   q?: string;
   category?: string;
   collection?: string;
   page?: number;
 }) {
   const { products, count } = await catalog({ q, category, collection, page });
+  const categories = showCategories
+    ? (
+        await (
+          await db()
+        )
+          .from('categories')
+          .select('id,title,slug')
+          .eq('active', true)
+          .order('title')
+      ).data || []
+    : [];
   return (
     <div className="container">
       <Title title={title} eyebrow="Objects with intention" />
+      <nav className="row" aria-label="Shop categories" style={{ marginBottom: 24 }}>
+        {showCategories && (
+          <>
+            <Link className={`button ${category ? 'secondary' : ''}`} href="/shop">
+              All
+            </Link>
+            {categories.map((c) => (
+              <Link
+                key={c.id}
+                className={`button ${category === c.slug ? '' : 'secondary'}`}
+                href={`/shop?category=${c.slug}`}
+                aria-current={category === c.slug ? 'page' : undefined}
+              >
+                {c.title}
+              </Link>
+            ))}
+          </>
+        )}
+      </nav>
       <form className="row" action="/search" style={{ marginBottom: 32 }}>
         <input
           className="control"
@@ -44,7 +77,7 @@ export async function CatalogPage({
         {page > 1 && (
           <Link
             className="button secondary"
-            href={`?page=${page - 1}&q=${encodeURIComponent(q || '')}`}
+            href={`?page=${page - 1}&q=${encodeURIComponent(q || '')}&category=${encodeURIComponent(category || '')}`}
           >
             Previous
           </Link>

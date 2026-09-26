@@ -13,10 +13,9 @@ export default async function Edit({ params }: { params: Promise<{ key: string }
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) notFound();
-  const [products, collections, media] = await Promise.all([
+  const [products, collections] = await Promise.all([
     client.from('products').select('id,title').limit(500),
     client.from('collections').select('id,title').limit(500),
-    client.from('media').select('url,title').limit(200),
   ]);
   return (
     <>
@@ -28,7 +27,6 @@ export default async function Edit({ params }: { params: Promise<{ key: string }
         canPublish={permissions.includes('website.publish')}
         products={products.data || []}
         collections={collections.data || []}
-        media={media.data || []}
       />
     </>
   );

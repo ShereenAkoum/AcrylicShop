@@ -4,7 +4,6 @@ const text = z.string().trim().min(1).max(500);
 const nullable = z.string().max(5000).nullable();
 const uuid = z.union([z.uuid(), z.null()]);
 const slug = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
-const amount = z.number().int().min(0).max(100000000);
 export type ResourceField = {
   key: string;
   label: string;
@@ -49,17 +48,19 @@ export const resources: Record<string, Resource> = {
     schema: z.object({
       title: text,
       sku: text,
-      slug,
-      arabic_title: z.string().max(3000),
-      transliteration: nullable,
-      translation: nullable,
       description: z.string().max(10000),
-      price: amount,
-      compare_at_price: amount.nullable(),
+      price: z
+        .number()
+        .min(0)
+        .max(1000000)
+        .refine(
+          (v) => Math.abs(v * 100 - Math.round(v * 100)) < 0.000001,
+          'Use at most two decimal places',
+        )
+        .transform((v) => Math.round(v * 100)),
       category_id: uuid,
       design_id: uuid,
-      shape: text,
-      status: z.enum(['Draft', 'Active', 'Archived']),
+      status: z.boolean().transform((active) => (active ? 'Active' : 'Draft')),
       featured: z.boolean(),
       bestseller: z.boolean(),
       new_arrival: z.boolean(),
@@ -69,22 +70,16 @@ export const resources: Record<string, Resource> = {
     fields: [
       { key: 'title', label: 'Title', required: true },
       { key: 'sku', label: 'SKU', required: true },
-      { key: 'slug', label: 'URL slug', required: true },
-      { key: 'arabic_title', label: 'Arabic title (curated text)', type: 'textarea', arabic: true },
-      { key: 'transliteration', label: 'Transliteration' },
-      { key: 'translation', label: 'Translation' },
       { key: 'description', label: 'Description', type: 'textarea' },
       {
         key: 'price',
-        label: 'Price (minor units, e.g. 1800 = $18)',
+        label: 'Price (USD)',
         type: 'number',
         required: true,
       },
-      { key: 'compare_at_price', label: 'Compare-at price (minor units)', type: 'number' },
       { key: 'category_id', label: 'Category', type: 'relation', table: 'categories' },
       { key: 'design_id', label: 'Master design', type: 'relation', table: 'designs' },
-      { key: 'shape', label: 'Shape', required: true },
-      { key: 'status', label: 'Status', type: 'select', options: ['Draft', 'Active', 'Archived'] },
+      { key: 'status', label: 'Active on website', type: 'checkbox' },
       { key: 'featured', label: 'Featured', type: 'checkbox' },
       { key: 'bestseller', label: 'Bestseller', type: 'checkbox' },
       { key: 'new_arrival', label: 'New arrival', type: 'checkbox' },
@@ -96,9 +91,12 @@ export const resources: Record<string, Resource> = {
     table: 'categories',
     permission: 'products',
     title: 'Categories',
-    fields: categoryFields,
-    schema: categorySchema,
-    columns: ['title', 'slug', 'active'],
+    fields: [
+      { key: 'title', label: 'Name', required: true },
+      { key: 'active', label: 'Active', type: 'checkbox' },
+    ],
+    schema: z.object({ title: text, active: z.boolean() }),
+    columns: ['title', 'active'],
   },
   collections: {
     table: 'collections',

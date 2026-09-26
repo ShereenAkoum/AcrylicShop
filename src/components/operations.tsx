@@ -1,3 +1,4 @@
+import { AddPopup } from './add-popup';
 import Image from 'next/image';
 import { assetUrl } from '@/lib/assets';
 import Link from 'next/link';
@@ -26,7 +27,7 @@ export function DataTable({
             {columns.map((c) => (
               <th key={c}>{c.replaceAll('_', ' ')}</th>
             ))}
-            {link && <th>Details</th>}
+            {link && <th className="actions-cell">Details</th>}
           </tr>
         </thead>
         <tbody>
@@ -38,7 +39,7 @@ export function DataTable({
                 </td>
               ))}
               {link && (
-                <td>
+                <td className="actions-cell">
                   <Link href={`${link}/${r.id}`}>Open →</Link>
                 </td>
               )}
@@ -347,15 +348,14 @@ export async function Inventory() {
                 <Field name="p_reason" label="Reason" required />
               </ActionForm>
             </div>
-            <div className="card">
-              <h2>Add supply</h2>
+            <AddPopup title="Add supply">
               <ActionForm action={operation}>
                 <input name="operation" type="hidden" value="create-inventory" />
                 <Field name="p_sku" label="SKU" required />
                 <Field name="p_title" label="Supply name" required />
                 <Field name="p_threshold" label="Low-stock threshold" type="number" value={5} />
               </ActionForm>
-            </div>
+            </AddPopup>
           </div>
         )}
       </div>

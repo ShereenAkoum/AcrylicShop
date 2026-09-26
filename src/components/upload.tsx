@@ -24,7 +24,6 @@ export function Upload({ bucket, entityId }: { bucket: string; entityId?: string
               bucket,
               entity_id: entityId,
               title: form.get('title'),
-              folder: form.get('folder'),
               size: file.size,
               mime: file.type,
             }),
@@ -69,10 +68,6 @@ export function Upload({ bucket, entityId }: { bucket: string; entityId?: string
       <label className="field">
         Title / descriptive alt text
         <input name="title" required maxLength={300} />
-      </label>
-      <label className="field">
-        Folder
-        <input name="folder" maxLength={100} />
       </label>
       {message && (
         <p role="status" style={{ overflowWrap: 'anywhere' }}>

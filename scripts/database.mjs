@@ -28,6 +28,11 @@ const env = {
     ? { PGSSLROOTCERT: process.env.SUPABASE_DB_SSLROOTCERT }
     : {}),
 };
+// A connection URL must not inherit an unrelated libpq address/service override.
+// PGHOSTADDR takes precedence over PGHOST, even when the URL host is explicit.
+delete env.PGHOSTADDR;
+delete env.PGSERVICE;
+delete env.PGSERVICEFILE;
 function sql(statement) {
   const result = spawnSync(
     process.env.PSQL_PATH || 'psql',
@@ -67,6 +72,7 @@ if (!state.auth_available || !state.storage_available)
 const applied = state.migration_history
   ? sql('select version from supabase_migrations.schema_migrations order by version;')
       .split('\n')
+      .map((version) => version.trim())
       .filter(Boolean)
   : [];
 const files = readdirSync('supabase/migrations')

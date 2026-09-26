@@ -7,7 +7,6 @@ const inputSchema = z.object({
   mime: z.string(),
   size: z.number().int().positive(),
   title: z.string().min(1).max(300),
-  folder: z.string().max(100).default(''),
   entity_id: z.uuid().optional(),
 });
 export async function POST(request: Request) {
@@ -40,7 +39,13 @@ export async function POST(request: Request) {
       const { data } = await client.rpc('has_permission', { p_key: 'products.edit' });
       if (!data) throw new Error('Product edit permission required');
     }
-    const path = `${crypto.randomUUID()}.${ext}`;
+    const folder = {
+      'product-images': 'products',
+      'website-media': 'website',
+      'design-previews': 'designs',
+      'production-files': 'production',
+    }[input.bucket];
+    const path = `${folder}/${crypto.randomUUID()}.${ext}`;
     const { data: intent, error } = await client
       .from('upload_requests')
       .insert({
@@ -48,7 +53,7 @@ export async function POST(request: Request) {
         bucket: input.bucket,
         path,
         title: input.title,
-        folder: input.folder,
+        folder,
         entity_id: input.entity_id || null,
       })
       .select('id')

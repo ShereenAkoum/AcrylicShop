@@ -5,6 +5,7 @@ import Link from 'next/link';
 export type Result = { error?: string; success?: string; href?: string };
 export function ActionForm({
   action,
+  hideSubmit = false,
   children,
   label = 'Save',
   confirm,
@@ -13,6 +14,7 @@ export function ActionForm({
   action: (state: Result, form: FormData) => Promise<Result>;
   children: ReactNode;
   label?: string;
+  hideSubmit?: boolean;
   confirm?: string;
   className?: string;
 }) {
@@ -41,9 +43,11 @@ export function ActionForm({
           )}
         </div>
       )}
-      <button className="button" disabled={pending}>
-        {pending ? 'Saving…' : label}
-      </button>
+      {!hideSubmit && (
+        <button className="button" disabled={pending}>
+          {pending ? 'Saving…' : label}
+        </button>
+      )}
     </form>
   );
 }

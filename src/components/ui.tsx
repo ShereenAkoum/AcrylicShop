@@ -42,6 +42,7 @@ export function Field({
   label,
   name,
   type = 'text',
+  step,
   value,
   required = false,
   children,
@@ -49,6 +50,7 @@ export function Field({
   label: string;
   name: string;
   type?: string;
+  step?: string;
   value?: string | number;
   required?: boolean;
   children?: ReactNode;
@@ -56,7 +58,9 @@ export function Field({
   return (
     <label className="field">
       {label}
-      {children || <input name={name} type={type} defaultValue={value} required={required} />}
+      {children || (
+        <input step={step} name={name} type={type} defaultValue={value} required={required} />
+      )}
     </label>
   );
 }

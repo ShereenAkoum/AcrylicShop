@@ -239,7 +239,7 @@ describe('migrations, RLS, and transactional workflows', () => {
       db.query('select public.assign_staff($1,$2,false)', [owner, roleId]),
     ).rejects.toThrow();
   });
-  it('finalizes direct uploads atomically and detects media references', async () => {
+  it('finalizes product uploads atomically without a media library', async () => {
     await role('authenticated', owner);
     const intent = (
       await db.query<{ id: string }>(
@@ -254,15 +254,12 @@ describe('migrations, RLS, and transactional workflows', () => {
     await db.query('select public.complete_upload($1)', [intent]);
     await db.query('select public.complete_upload($1)', [intent]);
     expect(
-      (await db.query(`select * from public.media where path='test-upload.png'`)).rows,
-    ).toHaveLength(1);
-    expect(
       (
-        await db.query<{ media_in_use: boolean }>(
-          `select public.media_in_use('/storage/v1/object/public/product-images/test-upload.png')`,
+        await db.query(
+          `select * from public.product_images where url='/storage/v1/object/public/product-images/test-upload.png'`,
         )
-      ).rows[0].media_in_use,
-    ).toBe(true);
+      ).rows,
+    ).toHaveLength(1);
     await role('authenticated', viewer);
     await expect(db.query('select public.complete_upload($1)', [intent])).rejects.toThrow();
   });
@@ -337,4 +334,23 @@ describe('migrations, RLS, and transactional workflows', () => {
     ).toHaveLength(0);
     expect((await db.query('select * from public.profiles')).rows).toHaveLength(3);
   });
+});
+
+it('hides inactive categories and keeps uncategorized active products visible', async () => {
+  await role('service_role');
+  const cat = '91000000-0000-4000-8000-000000000001';
+  await db.exec(
+    `insert into public.categories(id,title,slug,active) values ('${cat}','Hidden','hidden-test',false); insert into public.products(sku,slug,title,price,status,category_id) values ('VIS-HIDDEN','vis-hidden','Hidden',100,'Active','${cat}'),('VIS-NONE','vis-none','None',100,'Active',null),('VIS-DRAFT','vis-draft','Draft',100,'Draft',null);`,
+  );
+  await role('anon');
+  const result = await db.query<{ sku: string }>(
+    "select sku from public.products where sku like 'VIS-%'",
+  );
+  expect(result.rows.map((r) => r.sku)).toEqual(['VIS-NONE']);
+  await role('service_role');
+  await db.exec(`update public.categories set active=true where id='${cat}';`);
+  await role('anon');
+  expect(
+    (await db.query("select sku from public.products where sku='VIS-HIDDEN'")).rows,
+  ).toHaveLength(1);
 });

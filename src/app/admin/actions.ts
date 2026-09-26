@@ -23,7 +23,16 @@ export async function saveResource(_: Result, form: FormData): Promise<Result> {
     const resource = resources[name];
     if (!resource) throw new Error('Unknown resource');
     const { client } = await staff(`${resource.permission}.edit`);
-    const data = resource.schema.parse(formRecord(form, resource.fields));
+    const data = resource.schema.parse(formRecord(form, resource.fields)) as Record<
+      string,
+      unknown
+    >;
+    if (['categories', 'products'].includes(name) && !form.get('_id'))
+      data.slug =
+        String(data.title)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '') || `category-${crypto.randomUUID()}`;
     const id = z
       .uuid()
       .nullable()
@@ -58,7 +67,15 @@ export async function saveVariant(_: Result, form: FormData): Promise<Result> {
         color: z.string().min(1),
         size: z.string().min(1),
         stand: z.string().min(1),
-        price_override: z.union([z.literal(''), z.coerce.number().int().min(0)]),
+        price_override: z.union([
+          z.literal(''),
+          z.coerce
+            .number()
+            .min(0)
+            .max(1000000)
+            .refine((v) => Math.abs(v * 100 - Math.round(v * 100)) < 0.000001)
+            .transform((v) => Math.round(v * 100)),
+        ]),
         image_url: safeUrl,
         active: z.boolean(),
       })

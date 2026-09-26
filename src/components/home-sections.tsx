@@ -101,7 +101,7 @@ export async function HomeSection({ section: s }: { section: Section }) {
         <h2>{s.heading}</h2>
         <div className="grid grid-3">
           {data?.map((c) => (
-            <Link className="card" href={`/categories/${c.slug}`} key={c.id}>
+            <Link className="card" href={`/shop?category=${c.slug}`} key={c.id}>
               <h3>{c.title} ↗</h3>
               <p className="muted">{c.description}</p>
             </Link>

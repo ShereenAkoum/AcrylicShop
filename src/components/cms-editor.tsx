@@ -13,7 +13,6 @@ export function CmsEditor({
   canPublish,
   products,
   collections,
-  media,
 }: {
   id: string;
   documentKey: string;
@@ -21,7 +20,6 @@ export function CmsEditor({
   canPublish: boolean;
   products: { id: string; title: string }[];
   collections: { id: string; title: string }[];
-  media: { url: string; title: string }[];
 }) {
   const [doc, setDoc] = useState(initial);
   function update(key: keyof WebsiteDocument, value: unknown) {
@@ -192,17 +190,6 @@ export function CmsEditor({
                         />
                       </label>
                     ))}
-                    <label className="field">
-                      Choose image from media
-                      <select value="" onChange={(e) => section(index, { image: e.target.value })}>
-                        <option value="">Select reusable image</option>
-                        {media.map((m) => (
-                          <option key={m.url} value={m.url}>
-                            {m.title}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
                     <label className="field">
                       Product selection
                       <select
