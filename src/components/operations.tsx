@@ -291,7 +291,25 @@ export async function Inventory() {
   const { client, permissions } = await staff('inventory.view');
   const { data: items, error } = await client.from('inventory_items').select('*').order('title').limit(200);
   if (error) throw new Error(error.message);
-  const { data: history } = await client.from('inventory_movements').select('*').order('created_at', { ascending: false }).limit(50);
+  const { data: history } = await client
+    .from('inventory_movements')
+    .select('id,created_at,delta,movement_type,reason,order_number,product_title,variant_sku,inventory_items(sku,title),profiles(full_name)')
+    .order('created_at', { ascending: false })
+    .limit(50);
+  const movements = (history || []).map((movement) => {
+    const item = movement.inventory_items as unknown as { sku: string; title: string } | null;
+    const profile = movement.profiles as unknown as { full_name: string } | null;
+    return {
+      created_at: new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(movement.created_at)),
+      inventory_item: item ? `${item.title} (${item.sku})` : 'Inventory item',
+      movement: movement.delta > 0 ? `+${movement.delta} received` : `${movement.delta} used`,
+      type: movement.movement_type,
+      source: movement.order_number
+        ? `${movement.order_number}${movement.product_title ? ` — ${movement.product_title}` : ''}${movement.variant_sku ? ` (${movement.variant_sku})` : ''}`
+        : movement.reason,
+      by: profile?.full_name || (movement.movement_type === 'Sale' ? 'Online store' : 'System'),
+    };
+  });
   const editable = permissions.includes('inventory.edit');
   const editor = (item: { id: string; sku: string; title: string; quantity: number; low_stock_threshold: number } | null) => (
     <div className="card">
@@ -319,7 +337,7 @@ export async function Inventory() {
       </div>}
     </Title>
     <InventoryTable rows={items || []} editable={editable} editors={(items || []).map(editor)} />
-    <section className="section"><h2>Recent movements</h2><DataTable rows={history || []} columns={['created_at','delta','reason','actor']} /></section>
+    <section className="section"><h2>Recent movements</h2><p className="muted small">Every receipt, manual adjustment, and completed sale is recorded here.</p><DataTable rows={movements} columns={['created_at','inventory_item','movement','type','source','by']} /></section>
   </>;
 }
 export async function Fulfillment({ kind }: { kind: 'payments' | 'deliveries' }) {
