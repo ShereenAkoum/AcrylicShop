@@ -306,18 +306,19 @@ export async function Inventory() {
   );
   return <>
     <Title title="Inventory" eyebrow="Physical acrylic stock">
-      {editable && <AddPopup title="Add inventory item">{editor(null)}</AddPopup>}
+      {editable && <div className="row">
+        <AddPopup title="Adjust stock" label="Adjust stock">
+          <ActionForm action={operation} confirm="Record this inventory adjustment? Negative quantities reduce available stock.">
+            <input name="operation" type="hidden" value="inventory" />
+            <Field name="p_id" label="Inventory item"><select name="p_id">{items?.map(i => <option key={i.id} value={i.id}>{i.sku} — {i.title}</option>)}</select></Field>
+            <Field name="p_delta" label="Change (+ received / − used)" type="number" required />
+            <Field name="p_reason" label="Reason" required />
+          </ActionForm>
+        </AddPopup>
+        <AddPopup title="Add inventory item">{editor(null)}</AddPopup>
+      </div>}
     </Title>
     <InventoryTable rows={items || []} editable={editable} editors={(items || []).map(editor)} />
-    {editable && <section className="section card">
-      <h2>Adjust stock</h2>
-      <ActionForm action={operation} confirm="Record this inventory adjustment? Negative quantities reduce available stock.">
-        <input name="operation" type="hidden" value="inventory" />
-        <Field name="p_id" label="Inventory item"><select name="p_id">{items?.map(i => <option key={i.id} value={i.id}>{i.sku} — {i.title}</option>)}</select></Field>
-        <Field name="p_delta" label="Change (+ received / − used)" type="number" required />
-        <Field name="p_reason" label="Reason" required />
-      </ActionForm>
-    </section>}
     <section className="section"><h2>Recent movements</h2><DataTable rows={history || []} columns={['created_at','delta','reason','actor']} /></section>
   </>;
 }
