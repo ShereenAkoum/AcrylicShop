@@ -9,8 +9,6 @@ type Row = {
   id: string;
   sku: string;
   color: string;
-  size: string;
-  stand: string;
   active: boolean;
   image_url: string | null;
   price_override: number | null;
@@ -58,8 +56,6 @@ export function VariantTable({
                 'Image',
                 'SKU',
                 'Color',
-                'Size',
-                'Stand',
                 'Price override',
                 'Active',
                 'Actions',
@@ -99,8 +95,6 @@ export function VariantTable({
                   </td>
                   <td>{row.sku}</td>
                   <td>{row.color}</td>
-                  <td>{row.size}</td>
-                  <td>{row.stand}</td>
                   <td>
                     {row.price_override == null
                       ? 'Product price'
@@ -157,7 +151,7 @@ export function VariantTable({
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={8}>No variants yet.</td>
+                <td colSpan={6}>No variants yet.</td>
               </tr>
             )}
           </tbody>
