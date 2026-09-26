@@ -49,11 +49,10 @@ export async function HomeSection({ section: s }: { section: Section }) {
         </div>
       </section>
     );
-  if (s.type === 'products' || s.type === 'collection') {
+  if (s.type === 'products') {
     const { products } = await catalog({
       selection: s.selection === 'selected' ? undefined : s.selection,
       ids: s.selection === 'selected' ? s.product_ids : undefined,
-      collection: s.collection_id || undefined,
     });
     return (
       <section className="container section">
