@@ -3,13 +3,13 @@ import { VariantTable } from './variant-table';
 import { ProductImageTable } from './product-image-table';
 import { VariantImage } from './variant-image';
 import { CategoryControls } from './category-controls';
-import { removeCollectionProduct, customerAddress } from '@/app/admin/catalog-actions';
+import { customerAddress } from '@/app/admin/catalog-actions';
 import Link from 'next/link';
 import { staff } from '@/lib/auth';
 import { resources } from '@/lib/resources';
 import { ActionForm } from './action-form';
 import { Field, Title, Empty } from './ui';
-import { saveResource, saveVariant, saveCollection } from '@/app/admin/actions';
+import { saveResource, saveVariant } from '@/app/admin/actions';
 import { Upload } from './upload';
 import { notFound } from 'next/navigation';
 export async function ResourceList({
@@ -250,7 +250,6 @@ export async function ResourceEditor({
           <PrivateFiles id={id} />
         </section>
       )}
-      {!isNew && name === 'collections' && <CollectionExtras id={id} />}{' '}
       {!isNew && name === 'customers' && <CustomerOrders id={id} />}
     </>
   );
@@ -335,46 +334,6 @@ async function PrivateFiles({ id }: { id: string }) {
         </a>
       ))}
     </div>
-  );
-}
-async function CollectionExtras({ id }: { id: string }) {
-  const { client } = await staff('products.view');
-  const { data } = await client.from('products').select('id,title').limit(500);
-  const { data: members } = await client
-    .from('collection_products')
-    .select('product_id,products(title)')
-    .eq('collection_id', id);
-  return (
-    <section className="section card">
-      <h2>Collection products</h2>
-      {members?.map((p, i) => (
-        <div key={i}>
-          <p>{(p.products as unknown as { title: string })?.title}</p>
-          <ActionForm
-            action={removeCollectionProduct}
-            label="Remove from collection"
-            confirm="Remove this product from the collection?"
-          >
-            <input type="hidden" name="collection_id" value={id} />
-            <input type="hidden" name="product_id" value={p.product_id} />
-          </ActionForm>
-        </div>
-      ))}
-      <AddPopup title="Add to collection">
-        <ActionForm action={saveCollection} label="Add to collection">
-          <input type="hidden" name="collection_id" value={id} />
-          <Field name="product_id" label="Product">
-            <select name="product_id">
-              {data?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </ActionForm>
-      </AddPopup>
-    </section>
   );
 }
 async function CustomerOrders({ id }: { id: string }) {
