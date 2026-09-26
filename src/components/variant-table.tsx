@@ -1,5 +1,6 @@
 'use client';
 import { Fragment, useState, useTransition, type ReactNode } from 'react';
+import { PopupCloseContext } from './popup-context';
 import Image from 'next/image';
 import { Modal } from './modal';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -162,9 +163,11 @@ export function VariantTable({
           title={selected === 'new' ? 'Add variant' : view ? 'View variant' : 'Edit variant'}
           onClose={() => setSelected(null)}
         >
-          <fieldset disabled={view || !editable} style={{ border: 0 }}>
-            {editors[selected === 'new' ? rows.length : rows.findIndex((r) => r.id === selected)]}
-          </fieldset>
+          <PopupCloseContext.Provider value={() => setSelected(null)}>
+            <fieldset disabled={view || !editable} style={{ border: 0 }}>
+              {editors[selected === 'new' ? rows.length : rows.findIndex((r) => r.id === selected)]}
+            </fieldset>
+          </PopupCloseContext.Provider>
         </Modal>
       )}
       {deleting && (
