@@ -690,11 +690,48 @@ tr:last-child td {
   }
   .mobile-menu {
     display: block;
+    position: relative;
+  }
+  .mobile-menu > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .mobile-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+  .mobile-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .mobile-nav-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 81;
+    width: min(82vw, 340px);
+    height: 100dvh;
+    padding: 28px 24px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: -12px 0 30px rgba(0, 0, 0, 0.12);
+  }
+  .mobile-nav-heading {
+    padding: 8px 0 22px;
+    border-bottom: 1px solid var(--border);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 28px;
   }
   .mobile-menu nav {
     display: grid;
-    gap: 10px;
-    padding: 20px 0;
+    gap: 0;
+    padding: 18px 0;
+  }
+  .mobile-menu nav a {
+    padding: 14px 2px;
+    border-bottom: 1px solid var(--border);
+    font-size: 16px;
   }
   .hero {
     grid-template-columns: 1fr;
