@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { safeUrl } from './domain';
 export const sectionSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(['hero', 'products', 'categories', 'collection', 'banner', 'story', 'newsletter']),
+  type: z.enum(['hero', 'products', 'categories', 'banner', 'story', 'newsletter']),
   enabled: z.boolean(),
   heading: z.string().max(300),
   subheading: z.string().max(500).default(''),
@@ -12,7 +12,6 @@ export const sectionSchema = z.object({
   cta_text: z.string().max(100).default(''),
   cta_url: safeUrl.default(''),
   product_ids: z.array(z.uuid()).default([]),
-  collection_id: z.union([z.uuid(), z.literal('')]).default(''),
   selection: z.enum(['featured', 'bestseller', 'new_arrival', 'selected']).default('featured'),
 });
 export const documentSchema = z.object({
