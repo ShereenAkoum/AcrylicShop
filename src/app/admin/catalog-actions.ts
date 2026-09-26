@@ -35,23 +35,6 @@ export async function productImage(_: Result, form: FormData): Promise<Result> {
     return { error: 'Image update failed. Check the fields and your permissions.' };
   }
 }
-export async function removeCollectionProduct(_: Result, form: FormData): Promise<Result> {
-  try {
-    const { client } = await staff('products.edit');
-    const collection = z.uuid().parse(form.get('collection_id'));
-    const product = z.uuid().parse(form.get('product_id'));
-    const { error } = await client
-      .from('collection_products')
-      .delete()
-      .eq('collection_id', collection)
-      .eq('product_id', product);
-    if (error) throw error;
-    revalidatePath('/admin', 'layout');
-    return { success: 'Removed from collection.' };
-  } catch {
-    return { error: 'Unable to remove product.' };
-  }
-}
 export async function customerAddress(_: Result, form: FormData): Promise<Result> {
   try {
     const { client } = await staff('customers.edit');
