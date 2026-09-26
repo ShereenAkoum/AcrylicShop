@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { Heart, Search, ShoppingBag } from 'lucide-react';
+import { Heart, Menu, Search, ShoppingBag } from 'lucide-react';
 import { Brand } from '@/components/ui';
-import { ThemeSwitch } from '@/components/theme';
 import { document } from '@/lib/catalog';
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
   const nav = await document('navigation');
@@ -36,19 +35,24 @@ export default async function StoreLayout({ children }: { children: React.ReactN
             <Link className="icon-button" href="/cart" aria-label="Cart">
               <ShoppingBag size={19} />
             </Link>
-            <ThemeSwitch />
+            <details className="mobile-menu">
+              <summary className="icon-button" aria-label="Open navigation menu">
+                <Menu size={22} />
+              </summary>
+              <div className="mobile-menu-backdrop" />
+              <div className="mobile-nav-drawer">
+                <div className="mobile-nav-heading">Menu</div>
+                <nav aria-label="Mobile navigation">
+                  {links.map((l) => (
+                    <Link key={l.label} href={l.url}>
+                      {l.label}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            </details>
           </div>
         </div>
-        <details className="mobile-menu container">
-          <summary>Menu</summary>
-          <nav>
-            {links.map((l) => (
-              <Link key={l.label} href={l.url}>
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        </details>
       </header>
       <main id="main">{children}</main>
       <footer className="footer">
@@ -78,7 +82,6 @@ export default async function StoreLayout({ children }: { children: React.ReactN
             <p className="eyebrow">A more meaningful life</p>
             <p className="muted">{footer?.contact_email}</p>
             <p className="muted">{footer?.contact_phone}</p>
-            <ThemeSwitch />
             <Link href="/login">Staff sign in</Link>
           </div>
         </div>
