@@ -21,24 +21,6 @@ export type Resource = {
   schema: z.ZodType;
   columns: string[];
 };
-const categoryFields: ResourceField[] = [
-  { key: 'title', label: 'Title', required: true },
-  { key: 'slug', label: 'URL slug', required: true },
-  { key: 'description', label: 'Description', type: 'textarea' },
-  { key: 'image_url', label: 'Image URL', type: 'url' },
-  { key: 'active', label: 'Visible on storefront', type: 'checkbox' },
-  { key: 'seo_title', label: 'SEO title' },
-  { key: 'seo_description', label: 'SEO description', type: 'textarea' },
-];
-const categorySchema = z.object({
-  title: text,
-  slug,
-  description: z.string().max(5000),
-  image_url: safeUrl.nullable(),
-  active: z.boolean(),
-  seo_title: nullable,
-  seo_description: nullable,
-});
 export const resources: Record<string, Resource> = {
   products: {
     table: 'products',
@@ -97,14 +79,6 @@ export const resources: Record<string, Resource> = {
     ],
     schema: z.object({ title: text, active: z.boolean() }),
     columns: ['title', 'active'],
-  },
-  collections: {
-    table: 'collections',
-    permission: 'products',
-    title: 'Collections',
-    fields: categoryFields,
-    schema: categorySchema,
-    columns: ['title', 'slug', 'active'],
   },
   designs: {
     table: 'designs',
