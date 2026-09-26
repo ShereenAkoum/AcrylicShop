@@ -1,20 +1,18 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 export function SidebarLink({ href, children }: { href: string; children: ReactNode }) {
   const pathname = usePathname();
-  useEffect(() => {
-    try {
-      const url = new URL(href, window.location.origin);
-      void fetch(url.pathname, { method: 'GET', credentials: 'same-origin', priority: 'low' as RequestPriority });
-    } catch {}
-  }, [href]);
+  const router = useRouter();
   const target = href.replace(/\/$/, '');
   const active = pathname === target || (target !== '/admin' && pathname.startsWith(`${target}/`));
+  useEffect(() => {
+    router.prefetch(href);
+  }, [href, router]);
   return (
-    <Link href={href} aria-current={active ? 'page' : undefined}>
+    <Link href={href} prefetch aria-current={active ? 'page' : undefined}>
       {children}
     </Link>
   );
