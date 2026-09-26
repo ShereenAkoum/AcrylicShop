@@ -81,14 +81,7 @@ export async function saveVariant(_: Result, form: FormData): Promise<Result> {
       })
       .parse({ ...Object.fromEntries(form), active: form.get('active') === 'on' });
     const { stock, ...variantData } = data;
-    check((await client.rpc('save_variant', { p_id: form.get('id') || null, p_data: variantData })).error);
-    const { data: current, error: inventoryError } = await client.from('inventory_items').select('quantity').eq('id', data.inventory_item_id).single();
-    check(inventoryError);
-    const delta = stock - current.quantity;
-    if (delta) {
-      const { client: inventoryClient } = await staff('inventory.edit');
-      check((await inventoryClient.rpc('adjust_inventory', { p_id: data.inventory_item_id, p_delta: delta, p_reason: 'Stock set from product variant' })).error);
-    }
+    check((await client.rpc('save_variant', { p_id: form.get('id') || null, p_data: { ...variantData, stock_allocation: stock } })).error);
     revalidatePath('/admin');
     return { success: 'Variant saved.' };
   } catch (e) {
